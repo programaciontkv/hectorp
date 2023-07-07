@@ -221,7 +221,7 @@
                 <td id="inv" colspan="2" rowspan="3" valign="top">
 
                 </td>
-                <td colspan="2"><strong>Subtotal 12%</strong></td>
+                <td colspan="2"><strong>Subtotal  <?php echo $t_iva ?>%</strong></td>
                 <td class="numerico">
                     <?php echo number_format($factura->fac_subtotal12, $dec) ?>
                 </td>
@@ -231,7 +231,7 @@
                      <td class="numerico"><?php echo number_format($factura->fac_subtotal0,$dec)?></td>
                     </tr>
             <tr>
-                <td colspan="2"><strong>IVA 12%</strong></td>
+                <td colspan="2"><strong>IVA  <?php echo $t_iva ?>%</strong></td>
                 <td class="numerico">
                     <?php echo number_format($factura->fac_total_iva, $dec) ?>
                 </td>

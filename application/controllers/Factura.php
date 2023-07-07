@@ -153,6 +153,20 @@ class Factura extends CI_Controller {
 				}
 			}
 			
+
+			$rst_iva= $this->configuracion_model->lista_una_configuracion('30');
+
+			$redu_iva = $rst_iva->con_valor;
+			$por_iva  = $rst_iva->con_valor2;
+			$cod_iva  = $rst_iva->con_valor3;
+
+			if($redu_iva==0){          
+			$t_iva= $por_iva;
+			}else{
+			$t_iva= 12;
+			}
+
+
 			$this->load->view('layout/header',$this->menus());
 			$this->load->view('layout/menu',$this->menus());
 			$mensaje='Para una mejor experiencia gire la pantalla de su celular';
@@ -174,6 +188,7 @@ class Factura extends CI_Controller {
 						'titulo'=>ucfirst(strtolower($rst_cja->emi_nombre)).' '.ucfirst(strtolower($rst_cja->cja_nombre)),
 						'cancelar'=>base_url().strtolower($rst_opc->opc_direccion).$rst_opc->opc_id,
 						'mensaje'=> $mensaje,
+						't_iva'=>$t_iva,
 						'factura'=> (object) array(
 											'fac_fecha_emision'=>date('Y-m-d'),
 											'fac_numero'=>'',
@@ -255,6 +270,18 @@ class Factura extends CI_Controller {
 					$vnd="";
 				}
 			}
+
+			$rst_iva= $this->configuracion_model->lista_una_configuracion('30');
+
+			$redu_iva = $rst_iva->con_valor;
+			$por_iva  = $rst_iva->con_valor2;
+			$cod_iva  = $rst_iva->con_valor3;
+
+			if($redu_iva==0){          
+			$t_iva= $por_iva;
+			}else{
+			$t_iva= 12;
+			}
 			
 			$this->load->view('layout/header',$this->menus());
 			$this->load->view('layout/menu',$this->menus());
@@ -277,6 +304,7 @@ class Factura extends CI_Controller {
 						'titulo'=>ucfirst(strtolower($rst_cja->emi_nombre)).' '.ucfirst(strtolower($rst_cja->cja_nombre)),
 						'cancelar'=>base_url().strtolower($rst_opc->opc_direccion).$rst_opc->opc_id,
 						'mensaje'=> $mensaje,
+						't_iva'=>$t_iva,
 						'factura'=> (object) array(
 											'fac_fecha_emision'=>date('Y-m-d'),
 											'fac_numero'=>'',
@@ -2427,6 +2455,26 @@ public function buscar_cliente_3($txt){
 
 			}
 
+
+			$rst_iva = $this->configuracion_model->lista_una_configuracion('30');
+
+			$redu_iva = $rst_iva->con_valor;
+			$por_iva = $rst_iva->con_valor2;
+			$cod_iva = $rst_iva->con_valor3;
+
+			$iva = $this->factura_model->lista_impuesto_detalle_factura($id);
+			
+
+			if (empty($iva)) {
+				if($redu_iva==0){          
+					$t_iva= $por_iva;
+				}else{
+					$t_iva= 12;
+				}
+			}else{
+				$t_iva = $iva->iva;
+			}
+
 			$data=array(
 						'ambiente'=>$this->configuracion_model->lista_una_configuracion('5'),
 						'dec'=>$this->configuracion_model->lista_una_configuracion('2'),
@@ -2437,6 +2485,7 @@ public function buscar_cliente_3($txt){
 						'cns_det'=>$cns_det,
 						'cns_pag'=>$cns_pag,
 						'tipo'=>$tipo,
+						't_iva'=>$t_iva,
 						'leyenda_pie'=>$leyenda_pie,
 						);
 			$this->html2pdf->filename('factura.pdf');
@@ -2535,6 +2584,25 @@ public function buscar_cliente_3($txt){
 				
 				array_push($cns_det, $dt_det);
 			}
+
+			$rst_iva = $this->configuracion_model->lista_una_configuracion('30');
+
+				$redu_iva = $rst_iva->con_valor;
+				$por_iva = $rst_iva->con_valor2;
+				$cod_iva = $rst_iva->con_valor3;
+
+				$iva = $this->factura_model->lista_impuesto_detalle_factura($id);
+				
+
+				if (empty($iva)) {
+					if($redu_iva==0){          
+						$t_iva= $por_iva;
+					}else{
+						$t_iva= 12;
+					}
+				}else{
+					$t_iva = $iva->iva;
+				}
 
 			$data=array(
 						'ambiente'=>$this->configuracion_model->lista_una_configuracion('5'),
@@ -2755,6 +2823,8 @@ public function buscar_cliente_3($txt){
     function generar_xml($id,$d){
     	$amb=$this->configuracion_model->lista_una_configuracion('5');
 	    $ambiente=$amb->con_valor; 
+		// reduccion iva
+		$iva = $this->factura_model->lista_impuesto_detalle_factura($id);
     	if($ambiente!=0){
     	$xml="";    
     	$progr=$this->configuracion_model->lista_una_configuracion('15');
@@ -2842,14 +2912,41 @@ public function buscar_cliente_3($txt){
             $xml.="<valor>0.00</valor>" . chr(13);
             $xml.="</totalImpuesto>" . chr(13);
         }
-        if ($factura->fac_subtotal12 > 0) {//IVA 12
-            $xml.="<totalImpuesto>" . chr(13);
-            $xml.="<codigo>2</codigo>" . chr(13);
-            $xml.="<codigoPorcentaje>2</codigoPorcentaje>" . chr(13);
-            $xml.="<baseImponible>" . round($factura->fac_subtotal12 + $factura->fac_total_ice,$round) . "</baseImponible>" . chr(13);
-            $xml.="<valor>" . round($factura->fac_total_iva, $round) . "</valor>" . chr(13);
-            $xml.="</totalImpuesto>" . chr(13);
-        }
+        // if ($factura->fac_subtotal12 > 0) {//IVA 12
+        //     $xml.="<totalImpuesto>" . chr(13);
+        //     $xml.="<codigo>2</codigo>" . chr(13);
+        //     $xml.="<codigoPorcentaje>2</codigoPorcentaje>" . chr(13);
+        //     $xml.="<baseImponible>" . round($factura->fac_subtotal12 + $factura->fac_total_ice,$round) . "</baseImponible>" . chr(13);
+        //     $xml.="<valor>" . round($factura->fac_total_iva, $round) . "</valor>" . chr(13);
+        //     $xml.="</totalImpuesto>" . chr(13);
+        // }
+
+		if ($factura->fac_subtotal12 > 0) {//IVA 12
+				
+			$iv_temp = $iva->iva;
+			switch ($iv_temp) {
+	
+				case '8':
+					$coPorc = 8;
+				break;
+	
+				case '12':
+					$coPorc = 2;
+				break;
+	
+				case '14':
+					$coPorc = 3;
+				break;
+				
+			}
+			$xml.="<totalImpuesto>" . chr(13);
+			$xml.="<codigo>2</codigo>" . chr(13);
+			$xml.="<codigoPorcentaje>$coPorc</codigoPorcentaje>" . chr(13);
+			$xml.="<baseImponible>" . round($factura->fac_subtotal12 + $factura->fac_total_ice,$round) . "</baseImponible>" . chr(13);
+			$xml.="<valor>" . round($factura->fac_total_iva, $round) . "</valor>" . chr(13);
+			$xml.="</totalImpuesto>" . chr(13);
+	}
+
         if ($factura->fac_subtotal_no_iva > 0) { //NO OBJ
             $xml.="<totalImpuesto>" . chr(13);
             $xml.="<codigo>2</codigo>" . chr(13);
@@ -2910,11 +3007,36 @@ public function buscar_cliente_3($txt){
             $xml.="<codigo>2</codigo>" . chr(13);
             $base_imp=$det->dfc_precio_total + $det->dfc_ice;
 
-            if ($det->dfc_iva == '12') {
-                $tarifa = 12;
-                $codPorc = 2;
-                $valo_iva = round( $base_imp * 12 / 100, 2);
-            }
+            // if ($det->dfc_iva == '12') {
+            //     $tarifa = 12;
+            //     $codPorc = 2;
+            //     $valo_iva = round( $base_imp * 12 / 100, 2);
+            // }
+
+
+			$codPorc = '';   
+			if ($det->dfc_iva != '0' && $det->dfc_iva != 'EX' && $det->dfc_iva != 'NO') {
+				///iva 12% -- 13% -- 8%, etc
+				$iva_temp = $det->dfc_iva;
+				$tarifa = $iva_temp;
+				switch ($iva_temp) {
+	
+					case '8':
+						$codPorc = 8;
+					break;
+	
+					case '12':
+						$codPorc = 2;
+					break;
+	
+					case '14':
+						$codPorc = 3;
+					break;
+					
+				}
+			
+				$valo_iva = round( $base_imp * $iva_temp / 100, 2);
+			}
 
             if ($det->dfc_iva == '0') {
                 $tarifa = 0;
